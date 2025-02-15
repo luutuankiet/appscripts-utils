@@ -8,5 +8,6 @@
 - `clasp push -w` to watch for changes
 
 ## development
-- `claps push -w` on local
+- `clasp push -w` on local to push changes. `-w` is for continuous watch
+- `clasp pull` for pull changes from the remote appscript project.
 - debug on browser with a debugger sidebar.
