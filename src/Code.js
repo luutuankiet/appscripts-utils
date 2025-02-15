@@ -2,10 +2,10 @@ var logMessages = []; // Store log messages globally
 
 var ui = SlidesApp.getUi();
 function onOpen() {
-    ui.createMenu("Scripts import utils")
-        .addItem("Apply style from ref slide","applyStyleFromReferenceSlide")
-        .addItem("Apply fonts globally", "changeFontOnSelectedSlides")
-        .addItem("Update header text color & size", "changeUppermostTextStyle")
+    ui.createMenu("Utility for imported slides")
+        .addItem("Bulk apply style to selected slides","applyStyleFromReferenceSlide")
+        .addItem("Bulk apply fonts to selected slides", "changeFontOnSelectedSlides")
+        .addItem("Bulk update header text color & size to selected slides", "changeUppermostTextStyle")
         .addItem("Show Debug Logs", "showLogsInSidebar")
         .addToUi();
     logMessage("Menu created with options to apply fonts and update text styles.");
@@ -13,9 +13,9 @@ function onOpen() {
 
 // Function to log messages dynamically
 function logMessage(message) {
-    logMessages.push(new Date().toLocaleTimeString() + " - " + message);
+    logMessages.push(message);
+    // logMessages.push(new Date().toLocaleTimeString() + " - " + message);
     showLogsInSidebar(); // Refresh logs in sidebar
-    
 }
 
 // Display logs in the sidebar
@@ -52,12 +52,16 @@ function changeFontOnSelectedSlides() {
     slides.forEach(slide => {
         var shapes = slide.getShapes();
         shapes.forEach(shape => {
-            var text = shape.getText();
-            if (text) {
-                text.getTextStyle().setFontFamily(fontInput.getResponseText().trim());
-                logMessage("Font changed for shape on slide.");
-            }
-        });
+                try {
+                    if (shape.getShapeType() === SlidesApp.ShapeType.TEXT_BOX) {
+                        var text = shape.getText();
+                        text.getTextStyle().setFontFamily(fontInput.getResponseText().trim());
+                    }
+                } catch (err) {
+                    logMessage("ERROR: " + err.message);
+                }
+            });  
+        logMessage("Applied font to slide: " + slide.getObjectId());
     });
 
     SlidesApp.getUi().alert("Font updated to '" + fontInput.getResponseText() + "' on selected slides.");
@@ -261,6 +265,6 @@ function applyStyleFromReferenceSlide() {
         }
     });
 
-    // ui.alert("Updated selected slides with styles from reference slide " + slideNumber + ".");
+    ui.alert("Updated selected slides with styles from reference slide " + slideNumber + ".");
     logMessage("Updated selected slides with styles from reference slide " + slideNumber + ".");
 }
