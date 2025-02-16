@@ -2,10 +2,10 @@ var logMessages = []; // Store log messages globally
 
 var ui = SlidesApp.getUi();
 function onOpen() {
-    ui.createMenu("Scripts import utils")
-        .addItem("Apply style from ref slide","applyStyleFromReferenceSlide")
-        .addItem("Apply fonts globally", "changeFontOnSelectedSlides")
-        .addItem("Update header text color & size", "changeUppermostTextStyle")
+    ui.createMenu("Utility for imported slides")
+        .addItem("Bulk apply style to selected slides","applyStyleFromReferenceSlide")
+        .addItem("Bulk apply fonts to selected slides", "changeFontOnSelectedSlides")
+        .addItem("Bulk update header text color & size to selected slides", "changeUppermostTextStyle")
         .addItem("Show Debug Logs", "showLogsInSidebar")
         .addToUi();
     logMessage("Menu created with options to apply fonts and update text styles.");
@@ -13,9 +13,9 @@ function onOpen() {
 
 // Function to log messages dynamically
 function logMessage(message) {
-    logMessages.push(new Date().toLocaleTimeString() + " - " + message);
+    logMessages.push(message);
+    // logMessages.push(new Date().toLocaleTimeString() + " - " + message);
     showLogsInSidebar(); // Refresh logs in sidebar
-    
 }
 
 // Display logs in the sidebar
@@ -52,12 +52,16 @@ function changeFontOnSelectedSlides() {
     slides.forEach(slide => {
         var shapes = slide.getShapes();
         shapes.forEach(shape => {
-            var text = shape.getText();
-            if (text) {
-                text.getTextStyle().setFontFamily(fontInput.getResponseText().trim());
-                logMessage("Font changed for shape on slide.");
-            }
-        });
+                try {
+                    if (shape.getShapeType() === SlidesApp.ShapeType.TEXT_BOX) {
+                        var text = shape.getText();
+                        text.getTextStyle().setFontFamily(fontInput.getResponseText().trim());
+                    }
+                } catch (err) {
+                    logMessage("ERROR: " + err.message);
+                }
+            });  
+        logMessage("Applied font to slide: " + slide.getObjectId());
     });
 
     SlidesApp.getUi().alert("Font updated to '" + fontInput.getResponseText() + "' on selected slides.");
@@ -155,7 +159,7 @@ function applyStyleFromReferenceSlide() {
     var referencePositionTop = null;
     var referencePositionLeft = null;
 
-    // Parse font from the first available text box
+    // Step 1: Parse font from the first available text box
     var shapes = referenceSlide.getShapes();
     for (var i = 0; i < shapes.length; i++) {
         var text = shapes[i].getText();
@@ -166,18 +170,19 @@ function applyStyleFromReferenceSlide() {
         }
     }
 
-    // Parse the uppermost text's color, font size, and position
+    // Step 2: Parse the uppermost text's color, font size, and position
     var pageElements = referenceSlide.getPageElements();
-    var foundValidText = false; // Flag to track if a valid text element is found
+    var foundValidText = false;
 
     if (pageElements.length > 0) {
         pageElements.sort((a, b) => a.getTop() - b.getTop());
-        
-        // Find the first element with non-blank text
+
         for (var i = 0; i < pageElements.length; i++) {
             var element = pageElements[i];
+            logMessage("Checking element type: " + element.getPageElementType());
             if (element.getPageElementType() === SlidesApp.PageElementType.SHAPE) {
                 var textRange = element.asShape().getText();
+                logMessage("Checking text content: " + textRange.asString().trim());
                 if (textRange && textRange.asString().trim() !== "") {
                     referenceColor = textRange.getTextStyle().getForegroundColor();
                     referenceFontSize = textRange.getTextStyle().getFontSize();
@@ -186,21 +191,20 @@ function applyStyleFromReferenceSlide() {
                     logMessage("Parsed uppermost text color: " + referenceColor);
                     logMessage("Parsed uppermost text font size: " + referenceFontSize);
                     logMessage("Parsed uppermost text position: " + referencePositionTop + ", " + referencePositionLeft);
-                    foundValidText = true; // Set flag to true when a valid text is found
-                    break; // Exit loop after finding the first non-blank text
+                    foundValidText = true;
+                    break;
                 }
             }
         }
     }
 
-    // Check if a valid text element was found
     if (!foundValidText) {
         ui.alert("No valid text found in the reference slide. Please ensure the slide contains text.");
         logMessage("No valid text found in the reference slide. Script terminated.");
-        return; // End the function if no valid text is found
+        return;
     }
 
-    // Clone non-text shapes from the reference slide to selected slides
+    // Step 3: Clone non-text shapes from the reference slide to selected slides
     var selectedSlides = getSelectedSlides();
     if (selectedSlides.length === 0) {
         ui.alert("No slides selected. Please select slides first.");
@@ -215,13 +219,12 @@ function applyStyleFromReferenceSlide() {
 
     selectedSlides.forEach(slide => {
         nonTextShapes.forEach(shape => {
-            // Insert a copy of the page element onto the slide
-            slide.insertPageElement(shape);
+            slide.insertPageElement(shape).sendToBack();
             logMessage("Cloned non-text shape to selected slide.");
         });
     });
 
-    // Update all selected slides with parsed information
+    // Step 4: Set all text of selected slides to the reference font
     selectedSlides.forEach(slide => {
         var slideShapes = slide.getShapes();
         slideShapes.forEach(shape => {
@@ -232,36 +235,36 @@ function applyStyleFromReferenceSlide() {
             }
         });
 
+        // Step 5: Set uppermost text shape of each selected slide to the reference font size, color, and position
         var slideElements = slide.getPageElements();
-        if (slideElements.length > 0) {
-            slideElements.sort((a, b) => a.getTop() - b.getTop());
-            var topSlideElement = slideElements[0];
+        slideElements.sort((a, b) => a.getTop() - b.getTop());
 
-            // Loop through slide elements to find the first text element
-            for (var i = 0; i < slideElements.length; i++) {
-                var topSlideElement = slideElements[i];
-                if (topSlideElement.getPageElementType() === SlidesApp.PageElementType.SHAPE) {
-                    var topTextRange = topSlideElement.asShape().getText();
-                    if (topTextRange && topTextRange.asString().trim() !== "") {
-                        if (referenceColor) {
-                            topTextRange.getTextStyle().setForegroundColor(referenceColor);
-                            logMessage("Updated uppermost text color for slide.");
-                        }
-                        if (referenceFontSize) {
-                            topTextRange.getTextStyle().setFontSize(referenceFontSize);
-                            logMessage("Updated uppermost text font size for slide.");
-                        }
-                        if (referencePositionTop !== null && referencePositionTop !== null) {
-                            topSlideElement.setTop(referencePositionTop);
-                            topSlideElement.setLeft(referencePositionLeft);
-                            logMessage("Updated uppermost text position for slide.");
-                        }
+        for (var i = 0; i < slideElements.length; i++) {
+            var topSlideElement = slideElements[i];
+            logMessage("Checking element type");
+            if (topSlideElement.getPageElementType() === SlidesApp.PageElementType.SHAPE) {
+                var topTextRange = topSlideElement.asShape().getText();
+                if (topTextRange && topTextRange.asString().trim() !== "") {
+                    if (referenceColor) {
+                        topTextRange.getTextStyle().setForegroundColor(referenceColor);
+                        logMessage("Updated uppermost text color for slide: " + topTextRange.asString().trim());
                     }
+                    if (referenceFontSize) {
+                        topTextRange.getTextStyle().setFontSize(referenceFontSize);
+                        logMessage("Updated uppermost text font size for slide.");
+                    }
+                    if (referencePositionTop !== null && referencePositionLeft !== null) {
+                        topSlideElement.setTop(referencePositionTop);
+                        topSlideElement.setLeft(referencePositionLeft);
+                        logMessage("Updated uppermost text position for slide.");
+                    }
+                    logMessage("Executing break");
+                    break; // Exit loop after updating the first text element
                 }
             }
         }
     });
 
-    // ui.alert("Updated selected slides with styles from reference slide " + slideNumber + ".");
+    ui.alert("Updated selected slides with styles from reference slide " + slideNumber + ".");
     logMessage("Updated selected slides with styles from reference slide " + slideNumber + ".");
 }
