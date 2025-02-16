@@ -1,17 +1,3 @@
-var colorNameToHex = {
-    "red": "#FF0000",
-    "green": "#00FF00",
-    "blue": "#0000FF",
-    "yellow": "#FFFF00",
-    "black": "#000000",
-    "white": "#FFFFFF",
-    "gray": "#808080",
-    "purple": "#800080",
-    "orange": "#FFA500",
-    "pink": "#FFC0CB"
-    // Add more colors as needed
-};
-
 function changeUppermostTextStyle() {
     var slides = getSelectedSlides();
     if (slides.length === 0) {

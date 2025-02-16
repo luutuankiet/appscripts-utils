@@ -6,6 +6,7 @@ class TextShape {
         this.isTextBox = this.isShape ? element.asShape().getShapeType() === SlidesApp.ShapeType.TEXT_BOX : null;
         this.textRange = this.isTextBox ? element.asShape().getText() : null;
         this.hasText = this.textRange && this.textRange.asString().trim() !== "";
+        this.isLink = this.isShape && element.asShape().getText().getLinks().length > 0;
         this.top = element.getTop();
         this.left = element.getLeft();
     }

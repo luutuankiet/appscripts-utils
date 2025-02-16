@@ -1,6 +1,21 @@
 var logMessages = []; // Store log messages globally
 var ui = SlidesApp.getUi();
 
+
+var colorNameToHex = {
+    "red": "#FF0000",
+    "green": "#00FF00",
+    "blue": "#0000FF",
+    "yellow": "#FFFF00",
+    "black": "#000000",
+    "white": "#FFFFFF",
+    "gray": "#808080",
+    "purple": "#800080",
+    "orange": "#FFA500",
+    "pink": "#FFC0CB"
+    // Add more colors as needed
+};
+
 // Function to log messages dynamically
 function logMessage(message) {
     logMessages.push(message);
