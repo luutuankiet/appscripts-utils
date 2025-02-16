@@ -11,3 +11,8 @@
 - `clasp push -w` on local to push changes. `-w` is for continuous watch
 - `clasp pull` for pull changes from the remote appscript project.
 - debug on browser with a debugger sidebar.
+
+## deployment
+- grab your contained appscript project id
+- put it in .env
+- `./deploy_clasp.sh`
