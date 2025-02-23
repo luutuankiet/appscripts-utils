@@ -11,6 +11,7 @@ function onOpen() {
         .addItem("Bulk apply a fonts to selected slides", "changeFontOnSelectedSlides")
         .addItem("Bulk change accent color of selected slides", "changeAccentColor")
         .addItem("Bulk update header text color & size to selected slides", "changeUppermostTextStyle")
+        .addItem("Bulk update each selected slide TOC from ref ","applyTOC")
         .addItem("Show Debug Logs", "showLogsInSidebar")
         .addToUi();
 }
